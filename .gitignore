@@ -1,0 +1,24 @@
+# kebab_app/.gitignore
+
+# Ambienti virtuali
+.venv/
+venv/
+env/
+
+# Database locale SQLite
+*.db
+*.sqlite3
+
+# File temporanei di Python
+__pycache__/
+*.pyc
+
+# Configurazioni IDE (VS Code, PyCharm, ecc.)
+.vscode/
+.idea/
+
+# File di sistema Windows/Mac
+.DS_Store
+Thumbs.db
+
+*.bat

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard Titolare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-800 text-white p-6">
+    <div class="max-w-5xl mx-auto">
+      <h1 class="text-3xl font-bold mb-6 border-b pb-2">
+        Ordini in Tempo Reale
+      </h1>
+
+      <div
+        id="orders-board"
+        class="grid grid-cols-1 md:grid-cols-3 gap-6"
+      ></div>
+    </div>
+
+    <script>
+      // Costruisce l'URL WebSocket basato sull'host attuale (funziona in LAN)
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${wsProtocol}//${window.location.host}/ws/admin`;
+
+      const ws = new WebSocket(wsUrl);
+
+      ws.onmessage = function (event) {
+        const order = JSON.parse(event.data);
+        displayOrder(order);
+      };
+
+      function displayOrder(order) {
+        const board = document.getElementById("orders-board");
+        const card = document.createElement("div");
+        card.className =
+          "bg-gray-700 p-4 rounded-lg shadow-lg border-l-4 border-yellow-500";
+
+        let itemsHtml = order.details
+          .map((i) => `<li>${i.item} (${i.variant})</li>`)
+          .join("");
+
+        card.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-bold">#${order.id} - ${order.customer_name}</h2>
+                    <span class="bg-blue-500 text-xs px-2 py-1 rounded">${order.order_type}</span>
+                </div>
+                <ul class="mb-4 text-gray-300">
+                    ${itemsHtml}
+                </ul>
+                <div class="flex gap-2">
+                    <button class="bg-yellow-600 px-3 py-1 rounded w-full" onclick="updateStatus(this, 'Pronto')">Segna Pronto</button>
+                </div>
+            `;
+        board.prepend(card); // Aggiunge in cima
+      }
+
+      function updateStatus(btn, status) {
+        btn.parentElement.parentElement.classList.replace(
+          "border-yellow-500",
+          "border-green-500",
+        );
+        btn.textContent = "Consegnato";
+        btn.className = "bg-green-600 px-3 py-1 rounded w-full";
+        // Qui andrebbe una fetch PATCH verso /api/orders/{id}/status
+      }
+
+      // Nuova funzione per recuperare lo stato iniziale
+      async function loadExistingOrders() {
+        try {
+          // Esegue una richiesta HTTP GET all'endpoint appena creato
+          const response = await fetch("/api/orders");
+
+          if (!response.ok) {
+            throw new Error(`Errore HTTP: ${response.status}`);
+          }
+
+          const orders = await response.json();
+
+          // Pulisce la bacheca per evitare duplicati in caso di chiamate multiple
+          const board = document.getElementById("orders-board");
+          board.innerHTML = "";
+
+          // Itera sugli ordini e li renderizza a schermo riutilizzando la funzione esistente
+          // Ordiniamo l'array in modo che i più vecchi vengano aggiunti per primi,
+          // e i nuovi (via WebSocket) finiscano in cima
+          orders.forEach((order) => displayOrder(order));
+        } catch (error) {
+          console.error(
+            "Errore durante il caricamento degli ordini storici:",
+            error,
+          );
+        }
+      }
+
+      // Esegue la funzione non appena il browser analizza questo script
+      loadExistingOrders();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ordina il tuo Kebab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 p-6">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+      <h1 class="text-3xl font-bold mb-6 text-center text-red-600">
+        Nuovo Ordine
+      </h1>
+
+      <div
+        id="menu-container"
+        class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+      ></div>
+
+      <div class="mb-4">
+        <label class="block font-bold mb-2">Opzione Consumazione</label>
+        <select id="order-type" class="w-full p-2 border rounded">
+          <option value="Tavolo">Da mangiare sul posto</option>
+          <option value="Asporto">Da portar via</option>
+        </select>
+      </div>
+
+      <button
+        onclick="submitOrder()"
+        class="w-full bg-green-500 text-white font-bold py-3 rounded hover:bg-green-600 transition"
+      >
+        Invia Ordine
+      </button>
+    </div>
+
+    <script>
+      // Simulazione caricamento dati via fetch API
+      let currentOrderItems = [];
+
+      async function loadMenu() {
+        // Nella realtà chiamerebbe /api/menus, qui usiamo un mock per chiarezza di UI
+        const container = document.getElementById("menu-container");
+        container.innerHTML = `
+                <div class="border p-4 rounded cursor-pointer hover:shadow-lg transition" onclick="selectItem('Panino Kebab')">
+                    <h3 class="text-xl font-bold">Panino Kebab</h3>
+                    <p class="text-gray-600">€ 6.00</p>
+                </div>
+                <div class="border p-4 rounded cursor-pointer hover:shadow-lg transition" onclick="selectItem('Piadina Kebab')">
+                    <h3 class="text-xl font-bold">Piadina Kebab</h3>
+                    <p class="text-gray-600">€ 6.50</p>
+                </div>
+            `;
+      }
+
+      function selectItem(itemName) {
+        // Logica multi-step: mostrare modale per carne e ingredienti
+        const variant = prompt(
+          `Scegli la variante per ${itemName} (Pollo, Agnello, Veg):`,
+          "Pollo",
+        );
+        if (variant) {
+          currentOrderItems.push({
+            item: itemName,
+            variant: variant,
+            removed_ingredients: [],
+          });
+          alert(`${itemName} aggiunto al carrello!`);
+        }
+      }
+
+      async function submitOrder() {
+        if (currentOrderItems.length === 0)
+          return alert("Il carrello è vuoto!");
+
+        const payload = {
+          customer_name: "Tavolo 4", // In un caso reale, richiesto all'utente
+          order_type: document.getElementById("order-type").value,
+          total_price: 6.0 * currentOrderItems.length, // Semplificato
+          items: currentOrderItems,
+        };
+
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          alert("Ordine inviato con successo!");
+          currentOrderItems = []; // reset
+        }
+      }
+
+      loadMenu();
+    </script>
+  </body>
+</html>
